@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prescription Entry Dashboard</title>
+    <link rel="stylesheet" href="../base_styles.css">
+    <style>
+    /* Weekly Summary Link */
+    .weekly-summary-link:hover {
+        border-color: var(--accent-blue) !important;
+        color: var(--accent-blue) !important;
+        background: var(--bg-secondary) !important;
+    }
+
+    /* Combined Dashboard Stats */
+    .dashboard-stats {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 25px 30px;
+        margin-bottom: 20px;
+        box-shadow: var(--shadow);
+    }
+
+    .stats-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .stat-block {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 1;
+        justify-content: center;
+        min-height: 85px;
+    }
+
+    .stat-block.awaiting {
+        justify-content: center;
+    }
+
+    .stat-divider {
+        width: 1px;
+        height: 80px;
+        background: var(--border-color);
+        margin: 0 15px;
+    }
+
+    .radial-gauge {
+        position: relative;
+        width: 160px;
+        height: 85px;
+        flex-shrink: 0;
+    }
+
+    .gauge-background {
+        position: absolute;
+        width: 160px;
+        height: 160px;
+        border-radius: 50%;
+        background: var(--bg-tertiary);
+        clip-path: inset(0 0 50% 0);
+    }
+
+    .gauge-fill {
+        position: absolute;
+        width: 160px;
+        height: 160px;
+        border-radius: 50%;
+        background: conic-gradient(
+            from 270deg,
+            #4ecdc4 0deg,
+            #4ecdc4 0deg,
+            transparent 0deg
+        );
+        clip-path: inset(0 0 50% 0);
+        transition: background 0.5s ease;
+    }
+
+    .gauge-cover {
+        position: absolute;
+        width: 110px;
+        height: 110px;
+        background: var(--bg-secondary);
+        border-radius: 50%;
+        top: 25px;
+        left: 25px;
+        clip-path: inset(0 0 50% 0);
+    }
+
+    .gauge-info {
+        position: absolute;
+        bottom: 5px;
+        left: 0;
+        right: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        z-index: 10;
+    }
+
+    .gauge-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1;
+    }
+
+    .gauge-label {
+        font-size: 0.6rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-top: 2px;
+    }
+
+    .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1;
+    }
+
+    .stat-number.highlight {
+        color: var(--accent-green);
+    }
+
+    .stat-number.clarification {
+        color: var(--accent-red);
+    }
+
+    .stat-details {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .stat-title {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .stat-subtitle {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+    }
+
+    .stat-trend {
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .stat-trend.trend-up { color: #198754; }
+    .stat-trend.trend-down { color: #dc3545; }
+    .stat-trend.trend-flat { color: var(--text-secondary); }
+
+    .stat-record {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        margin-top: 2px;
+    }
+
+    .stat-record.is-record {
+        color: #ffc107;
+        font-weight: 600;
+    }
+
+    @media (max-width: 900px) {
+        .stats-row {
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .stat-divider {
+            display: none;
+        }
+        .stat-block {
+            min-width: 45%;
+        }
+    }
+
+    /* Highlights Widget */
+    .highlights-widget {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 15px 20px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: flex-start;
+        gap: 25px;
+        box-shadow: var(--shadow);
+    }
+
+    .highlight-top-performer { display: flex; align-items: flex-start; gap: 12px; flex-shrink: 0; }
+    .top-performer-crown { font-size: 1.5rem; line-height: 1; }
+    .top-performer-label { font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .top-performer-name { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); }
+    .top-performer-name .count { color: var(--accent-green); font-weight: 600; }
+    .highlight-badges { flex: 1; }
+    .badges-label { font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+    .achievements-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    /* Badge Tiers */
+    .achievement-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 15px; font-size: 0.75rem; font-weight: 600; }
+    .badge-bronze { background: linear-gradient(135deg, #cd7f32, #b8860b); color: white; }
+    .badge-silver { background: linear-gradient(135deg, #c0c0c0, #a8a8a8); color: #333; }
+    .badge-gold { background: linear-gradient(135deg, #ffd700, #ffed4a); color: #8b4513; }
+    .badge-platinum { background: linear-gradient(135deg, #e5e4e2, #b4b4b4, #e5e4e2); color: #1a1a2e; }
+    .badge-diamond { background: linear-gradient(135deg, #b9f2ff, #89cff0, #b9f2ff); color: #1a5276; }
+    .badge-pr { background: linear-gradient(135deg, #ff6b6b, #ee5a5a); color: white; }
+
+    /* PR Row Highlight in Table */
+    tr.pr-row { background: linear-gradient(90deg, rgba(255, 107, 107, 0.08), transparent) !important; }
+    tr.pr-row td:first-child { border-left: 3px solid #ff6b6b; }
+
+    /* Day button with PR indicator */
+    .day-btn.has-pr { position: relative; border-color: #ffd700; }
+    .day-btn.has-pr::after { content: '\2B50'; position: absolute; top: -8px; right: -8px; font-size: 0.7rem; }
+
+    /* Progress Bar Styles */
+    .progress-cell { min-width: 180px; }
+    .progress-container { display: flex; align-items: center; gap: 10px; }
+    .progress-bar-wrapper { flex: 1; height: 20px; background: var(--bg-tertiary); border-radius: 10px; overflow: hidden; position: relative; }
+    .progress-bar { height: 100%; border-radius: 10px; transition: width 0.5s ease; position: relative; }
+    .progress-bar.low { background: linear-gradient(90deg, #dc3545, #e74c3c); }
+    .progress-bar.medium { background: linear-gradient(90deg, #fd7e14, #ffc107); }
+    .progress-bar.high { background: linear-gradient(90deg, #20c997, #198754); }
+    .progress-bar.complete { background: linear-gradient(90deg, #40916c, #2d6a4f); }
+    .progress-bar.exceeded { background: linear-gradient(90deg, #6f42c1, #d63384); }
+    .progress-text { font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); white-space: nowrap; min-width: 45px; text-align: right; }
+    .progress-text.complete { color: var(--accent-green); }
+    .progress-text.exceeded { color: var(--accent-purple); }
+
+    /* Goal reached indicator */
+    .goal-reached { display: inline-flex; align-items: center; gap: 4px; font-size: 0.7rem; color: var(--accent-green); font-weight: 600; }
+    tr.goal-achieved { background: linear-gradient(90deg, rgba(25, 135, 84, 0.08), transparent) !important; }
+    tr.goal-achieved td:first-child { border-left: 3px solid #198754; }
+
+    @media (max-width: 768px) {
+        .progress-cell { min-width: 120px; }
+    }
+
+    /* === TV MODE === */
+    .tv-toggle-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-secondary); font-weight: 500; cursor: pointer; transition: all 0.2s; text-decoration: none; }
+    .tv-toggle-btn:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
+    .tv-toggle-btn.active { background: var(--accent-blue); border-color: var(--accent-blue); color: white; }
+    body.tv-mode header, body.tv-mode footer { display: none !important; }
+    body.tv-mode .container { max-width: 100%; padding: 10px 20px; }
+    body.tv-mode .page-header p, body.tv-mode .page-header .weekly-summary-link { display: none; }
+    body.tv-mode .page-header h1 { font-size: 1.3rem; margin-bottom: 0; }
+    body.tv-mode .page-header { margin-bottom: 10px; }
+    .tv-carousel-dots { display: none; }
+    body.tv-carousel .tv-panel { display: none; }
+    body.tv-carousel .tv-panel.active { display: block; animation: tvFadeIn 0.5s ease; }
+    @keyframes tvFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    body.tv-carousel .tv-carousel-dots { display: flex; justify-content: center; gap: 10px; padding: 15px 0; position: fixed; bottom: 10px; left: 0; right: 0; z-index: 99999; pointer-events: auto; }
+    .tv-dot { width: 16px; height: 16px; border-radius: 50%; background: var(--border-color); cursor: pointer; transition: all 0.3s; pointer-events: auto; border: 2px solid rgba(255,255,255,0.3); }
+    .tv-dot:hover { background: var(--accent-blue); opacity: 0.7; }
+    .tv-dot.active { background: var(--accent-blue); transform: scale(1.2); }
+    /* === END TV MODE === */
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <a href="https://sweetgrasspharmacy.com" class="logo"><img src="https://sweetgrasspharmacy.com/wp-content/uploads/2023/09/Sweetgrass-Pharmacy-and-Compounding-logo.svg" alt="Sweetgrass Pharmacy"></a>
+            <nav>
+                <a href="pharmacist.html">Pharmacist</a>
+                <a href="call_center.html">Call Center</a>
+                <a href="prescription_entry.html" class="active">Rx Entry</a>
+                <a href="dispensing.html">Dispensing</a>
+                <a href="shipping.html">Shipping</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+    <div>
+        <h1>Prescription Entry Dashboard</h1>
+        <p>Daily entry performance and employee leaderboard</p>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <a href="prescription_entry_weekly.html" class="weekly-summary-link" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-secondary); text-decoration: none; font-weight: 500; transition: all 0.2s;">
+            <span style="font-size: 1.1rem;">&#128197;</span> Summary
+        </a>
+        <a href="?tv=carousel" class="tv-toggle-btn" id="tvToggleBtn">&#128250; TV</a>
+    </div>
+</div>
+
+<div class="day-filters" id="dayFilters">
+    <div class="loading">Loading dates...</div>
+</div>
+
+<div class="tv-carousel-panels">
+<div class="tv-panel" data-panel="0">
+
+<!-- Combined Dashboard Stats -->
+<div class="dashboard-stats" id="dashboardStats">
+    <div class="stats-row">
+        <!-- Awaiting Entry with Gauge -->
+        <div class="stat-block awaiting" id="awaitingBlock">
+            <div class="radial-gauge" id="radialGauge">
+                <div class="gauge-background"></div>
+                <div class="gauge-fill" id="gaugeFill"></div>
+                <div class="gauge-cover"></div>
+                <div class="gauge-info">
+                    <div class="gauge-value" id="queueTotal">--</div>
+                    <div class="gauge-label">Awaiting Entry</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-divider" id="clarificationDivider"></div>
+
+        <!-- Awaiting Clarification -->
+        <div class="stat-block" id="clarificationBlock">
+            <div class="stat-number clarification" id="clarificationValue">--</div>
+            <div class="stat-details">
+                <div class="stat-title">Awaiting Clarification</div>
+            </div>
+        </div>
+
+        <div class="stat-divider" id="firstDivider"></div>
+
+        <!-- Total Rx -->
+        <div class="stat-block" id="totalRxBlock">
+            <div class="stat-number highlight" id="totalRxValue">--</div>
+            <div class="stat-details">
+                <div class="stat-title">Total Rx</div>
+                <div class="stat-record" id="totalRxRecord">--</div>
+            </div>
+        </div>
+
+        <div class="stat-divider"></div>
+
+        <!-- Avg Per Person -->
+        <div class="stat-block" id="avgBlock">
+            <div class="stat-number" id="avgValue">--</div>
+            <div class="stat-details">
+                <div class="stat-title">Avg/Person</div>
+                <div class="stat-record" id="avgRecord">--</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div><!-- end tv-panel 0 -->
+<div class="tv-panel" data-panel="1">
+
+<div id="highlightsContainer" class="highlights-widget" style="display: none;">
+    <div class="highlight-top-performer" id="topPerformerSection">
+        <span class="top-performer-crown">&#128081;</span>
+        <div class="top-performer-info">
+            <div class="top-performer-label">Top Performer</div>
+            <div class="top-performer-name" id="topPerformerName">-</div>
+        </div>
+    </div>
+    <div class="highlight-badges" id="badgesSection">
+        <div class="badges-label">Daily Achievements</div>
+        <div class="achievements-grid" id="badges"></div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <span class="card-title">Employee Leaderboard</span>
+        <span id="employeeCount" class="badge badge-info">0 employees</span>
+    </div>
+    <div id="employeeTable">
+        <div class="loading">Loading employees...</div>
+    </div>
+</div>
+
+</div><!-- end tv-panel 1 -->
+</div><!-- end tv-carousel-panels -->
+
+<div class="tv-carousel-dots" id="tvCarouselDots">
+    <span class="tv-dot active" data-panel="0"></span>
+    <span class="tv-dot" data-panel="1"></span>
+</div>
+
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="refresh-indicator">
+                <span class="refresh-dot"></span>
+                <span>Auto-refresh enabled</span>
+            </div>
+        </div>
+    </footer>
+
+<script>
+let allData = { data: {}, dates: [], queue: null };
+let currentDate = null;
+
+// Data file paths (static JSON)
+const DATA_BASE = '../data/';
+
+async function fetchData() {
+    try {
+        const response = await fetch(DATA_BASE + 'prescription_entry.json');
+        allData = await response.json();
+
+        // Limit to last 7 days
+        allData.dates = allData.dates.slice(0, 7);
+
+        if (allData.dates.length > 0) {
+            // Default to most recent date (dates are sorted descending)
+            currentDate = allData.dates[0];
+            renderQueueStatus();
+            renderDayFilters();
+            renderData();
+        } else {
+            document.getElementById('dayFilters').innerHTML = '<p class="empty-state">No data available</p>';
+            document.getElementById('totalRxValue').textContent = '--';
+            document.getElementById('avgValue').textContent = '--';
+            document.getElementById('employeeTable').innerHTML = '<p class="empty-state">No employee data available</p>';
+        }
+    } catch (error) {
+        console.error('Error fetching data:', error);
+    }
+}
+
+function renderQueueStatus() {
+    const queue = allData.queue;
+    const awaitingBlock = document.getElementById('awaitingBlock');
+    const clarificationBlock = document.getElementById('clarificationBlock');
+    const clarificationDivider = document.getElementById('clarificationDivider');
+    const firstDivider = document.getElementById('firstDivider');
+
+    // Always show awaiting sections if queue data exists
+    if (!queue) {
+        if (awaitingBlock) awaitingBlock.style.display = 'none';
+        if (clarificationBlock) clarificationBlock.style.display = 'none';
+        if (clarificationDivider) clarificationDivider.style.display = 'none';
+        if (firstDivider) firstDivider.style.display = 'none';
+        return;
+    }
+
+    if (awaitingBlock) awaitingBlock.style.display = 'flex';
+    if (clarificationBlock) clarificationBlock.style.display = 'flex';
+    if (clarificationDivider) clarificationDivider.style.display = 'block';
+    if (firstDivider) firstDivider.style.display = 'block';
+
+    // Update clarification count
+    const clarificationCount = allData.clarificationCount || 0;
+    document.getElementById('clarificationValue').textContent = clarificationCount;
+
+    // Count items with status 'New' or 'In Process'
+    const items = queue.items || [];
+    const awaiting = items.filter(item => {
+        const status = (item.status || '').toLowerCase();
+        return status === 'new' || status === 'in_process';
+    }).length;
+    document.getElementById('queueTotal').textContent = awaiting;
+
+    // Get total prescriptions entered today for ratio calculation
+    const dayData = allData.data[currentDate];
+    const totalEntered = dayData ? dayData.totalPrescriptions : 0;
+
+    // Calculate ratio of awaiting to entered (cap at 1 for gauge display)
+    const ratio = totalEntered > 0 ? Math.min(awaiting / totalEntered, 1) : (awaiting > 0 ? 1 : 0);
+
+    // Determine color based on ratio
+    let color;
+    if (ratio >= 0.5) {
+        color = '#ee5a5a';
+    } else if (ratio >= 0.25) {
+        color = '#e6a700';
+    } else {
+        color = '#4ecdc4';
+    }
+
+    // Update gauge fill (180 degrees = 100%, starting from left side)
+    const degrees = ratio * 180;
+    const gaugeFill = document.getElementById('gaugeFill');
+    gaugeFill.style.background = `conic-gradient(from 270deg, ${color} 0deg, ${color} ${degrees}deg, transparent ${degrees}deg)`;
+
+    // Update gauge value color
+    const gaugeValue = document.getElementById('queueTotal');
+    gaugeValue.style.color = color;
+}
+
+function renderDayFilters() {
+    const container = document.getElementById('dayFilters');
+    container.innerHTML = allData.dates.map(date => {
+        const d = allData.data[date];
+        const hasPR = d && d.employees && d.employees.some(e => e.isPersonalRecord);
+        return `<button class="day-btn ${date === currentDate ? 'active' : ''} ${hasPR ? 'has-pr' : ''}" onclick="selectDate('${date}')">
+            ${d ? d.dayName + ' ' + d.displayDate : date}
+        </button>`;
+    }).join('');
+}
+
+function selectDate(date) {
+    currentDate = date;
+    document.querySelectorAll('.day-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    renderQueueStatus();
+    renderData();
+}
+
+function getAchievementBadges(employees, totalRx, prCount) {
+    const badges = [];
+    const topScore = employees.length > 0 ? employees[0].prescriptions : 0;
+    const activeCount = employees.length;
+
+    if (prCount >= 5) {
+        badges.push({ label: `${prCount} PRs - Record Breaking!`, tier: 'diamond', icon: '&#128142;' });
+    } else if (prCount >= 3) {
+        badges.push({ label: `${prCount} PRs - Amazing!`, tier: 'platinum', icon: '&#10024;' });
+    } else if (prCount >= 2) {
+        badges.push({ label: `${prCount} PRs`, tier: 'gold', icon: '&#128293;' });
+    } else if (prCount === 1) {
+        badges.push({ label: '1 PR', tier: 'pr', icon: '&#11088;' });
+    }
+
+    if (totalRx >= 400) {
+        badges.push({ label: 'Legendary Volume', tier: 'diamond', icon: '&#128640;' });
+    } else if (totalRx >= 300) {
+        badges.push({ label: 'Exceptional Volume', tier: 'platinum', icon: '&#128200;' });
+    } else if (totalRx >= 200) {
+        badges.push({ label: 'High Volume', tier: 'gold', icon: '&#128170;' });
+    } else if (totalRx >= 100) {
+        badges.push({ label: 'Solid Output', tier: 'silver', icon: '&#128077;' });
+    } else if (totalRx >= 50) {
+        badges.push({ label: 'Good Start', tier: 'bronze', icon: '&#128203;' });
+    }
+
+    if (topScore >= 100) {
+        badges.push({ label: 'Century Club', tier: 'diamond', icon: '&#128175;' });
+    } else if (topScore >= 75) {
+        badges.push({ label: 'Star Performer', tier: 'platinum', icon: '&#127775;' });
+    } else if (topScore >= 50) {
+        badges.push({ label: 'Power Player', tier: 'gold', icon: '&#9889;' });
+    } else if (topScore >= 30) {
+        badges.push({ label: 'Strong Effort', tier: 'silver', icon: '&#128188;' });
+    }
+
+    if (activeCount >= 10) {
+        badges.push({ label: 'Full House', tier: 'gold', icon: '&#128101;' });
+    } else if (activeCount >= 5) {
+        badges.push({ label: 'Team Effort', tier: 'silver', icon: '&#129309;' });
+    }
+
+    return badges;
+}
+
+function renderData() {
+    const dayData = allData.data[currentDate];
+
+    if (!dayData) {
+        document.getElementById('totalRxValue').textContent = '--';
+        document.getElementById('avgValue').textContent = '--';
+        document.getElementById('totalRxRecord').textContent = '';
+        document.getElementById('avgRecord').textContent = '';
+        document.getElementById('highlightsContainer').style.display = 'none';
+        return;
+    }
+
+    const employees = dayData.employees || [];
+    const totalRx = dayData.totalPrescriptions;
+    const topPerformer = employees.length > 0 ? employees[0] : null;
+    const prEmployees = employees.filter(e => e.isPersonalRecord);
+    const avg = employees.length > 0 ? Math.round(totalRx / employees.length) : 0;
+
+    // Calculate all-time records
+    let allTimeHighTotal = 0;
+    let allTimeHighAvg = 0;
+    for (const date of allData.dates) {
+        const d = allData.data[date];
+        if (d) {
+            if (d.totalPrescriptions > allTimeHighTotal) {
+                allTimeHighTotal = d.totalPrescriptions;
+            }
+            const empCount = (d.employees || []).length;
+            if (empCount > 0) {
+                const dayAvg = Math.round(d.totalPrescriptions / empCount);
+                if (dayAvg > allTimeHighAvg) {
+                    allTimeHighAvg = dayAvg;
+                }
+            }
+        }
+    }
+
+    // Update Total Rx
+    document.getElementById('totalRxValue').textContent = totalRx.toLocaleString();
+
+    // Update Total Rx record comparison
+    const totalRecordEl = document.getElementById('totalRxRecord');
+    if (totalRx >= allTimeHighTotal && allTimeHighTotal > 0) {
+        totalRecordEl.textContent = '\u2B50 New Record!';
+        totalRecordEl.className = 'stat-record is-record';
+    } else if (allTimeHighTotal > 0) {
+        const pctOfRecord = Math.round((totalRx / allTimeHighTotal) * 100);
+        totalRecordEl.textContent = `${pctOfRecord}% of record (${allTimeHighTotal})`;
+        totalRecordEl.className = 'stat-record';
+    } else {
+        totalRecordEl.textContent = '';
+    }
+
+    // Update Avg/Person
+    document.getElementById('avgValue').textContent = avg;
+
+    // Update Avg record comparison
+    const avgRecordEl = document.getElementById('avgRecord');
+    if (avg >= allTimeHighAvg && allTimeHighAvg > 0) {
+        avgRecordEl.textContent = '\u2B50 New Record!';
+        avgRecordEl.className = 'stat-record is-record';
+    } else if (allTimeHighAvg > 0) {
+        const pctOfRecord = Math.round((avg / allTimeHighAvg) * 100);
+        avgRecordEl.textContent = `${pctOfRecord}% of record (${allTimeHighAvg})`;
+        avgRecordEl.className = 'stat-record';
+    } else {
+        avgRecordEl.textContent = '';
+    }
+
+    // Highlights Widget (Top Performer + Badges)
+    const badges = getAchievementBadges(employees, totalRx, prEmployees.length);
+    const highlightsContainer = document.getElementById('highlightsContainer');
+    const hasTopPerformer = topPerformer && topPerformer.prescriptions > 0;
+    const hasBadges = badges.length > 0;
+
+    if (hasTopPerformer || hasBadges) {
+        highlightsContainer.style.display = 'flex';
+
+        // Top Performer
+        const topPerformerSection = document.getElementById('topPerformerSection');
+        if (hasTopPerformer) {
+            topPerformerSection.style.display = 'flex';
+            document.getElementById('topPerformerName').innerHTML = `
+                ${topPerformer.name} <span class="count">(${topPerformer.prescriptions} Rx)</span>
+                ${topPerformer.isPersonalRecord ? ' &#128293;' : ''}
+            `;
+        } else {
+            topPerformerSection.style.display = 'none';
+        }
+
+        // Badges
+        const badgesSection = document.getElementById('badgesSection');
+        if (hasBadges) {
+            badgesSection.style.display = 'block';
+            badgesSection.style.borderLeft = hasTopPerformer ? '1px solid var(--border-color)' : 'none';
+            badgesSection.style.paddingLeft = hasTopPerformer ? '20px' : '0';
+            document.getElementById('badges').innerHTML = badges.map(b => `
+                <span class="achievement-badge badge-${b.tier}">${b.icon} ${b.label}</span>
+            `).join('');
+        } else {
+            badgesSection.style.display = 'none';
+        }
+    } else {
+        highlightsContainer.style.display = 'none';
+    }
+
+    // Render employee table (top 10 only)
+    if (employees.length === 0) {
+        document.getElementById('employeeTable').innerHTML = '<p class="empty-state">No employee data for this date</p>';
+        document.getElementById('employeeCount').textContent = '0 employees';
+    } else {
+        const displayCount = Math.min(employees.length, 10);
+        document.getElementById('employeeCount').textContent = `Top ${displayCount} of ${employees.length} employees`;
+
+        const DAILY_GOAL = 250;
+
+        document.getElementById('employeeTable').innerHTML = `
+            <table>
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Employee</th>
+                        <th>Answered</th>
+                        <th>Prescriptions</th>
+                        <th>Progress to Goal (${DAILY_GOAL})</th>
+                        <th>Achievement</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${employees.slice(0, 10).map((emp, i) => {
+                        const progress = Math.min((emp.prescriptions / DAILY_GOAL) * 100, 100);
+                        const progressClass = getProgressClass(emp.prescriptions, DAILY_GOAL);
+                        const textClass = emp.prescriptions >= DAILY_GOAL ? (emp.prescriptions > DAILY_GOAL ? 'exceeded' : 'complete') : '';
+                        const rowClass = emp.isPersonalRecord ? 'pr-row' : (emp.prescriptions >= DAILY_GOAL ? 'goal-achieved' : '');
+                        return `
+                        <tr class="${rowClass}">
+                            <td><span class="rank-badge ${i < 3 ? 'rank-' + (i+1) : 'rank-default'}">${i + 1}</span></td>
+                            <td><strong>${emp.name}</strong></td>
+                            <td>${emp.answered != null ? emp.answered : '-'}</td>
+                            <td>${emp.prescriptions.toLocaleString()}</td>
+                            <td class="progress-cell">
+                                <div class="progress-container">
+                                    <div class="progress-bar-wrapper">
+                                        <div class="progress-bar ${progressClass}" style="width: ${progress}%"></div>
+                                    </div>
+                                    <span class="progress-text ${textClass}">${Math.round((emp.prescriptions / DAILY_GOAL) * 100)}%</span>
+                                </div>
+                            </td>
+                            <td>${getEmployeeAchievement(emp)}</td>
+                        </tr>
+                    `}).join('')}
+                </tbody>
+            </table>
+        `;
+    }
+}
+
+function getEmployeeAchievement(emp) {
+    // PR takes priority
+    if (emp.isPersonalRecord) {
+        return '<span class="achievement-badge badge-pr">&#11088; NEW PR!</span>';
+    }
+    return getPerformanceBadge(emp.prescriptions);
+}
+
+function getPerformanceBadge(count) {
+    if (count >= 250) return '<span class="achievement-badge badge-diamond">&#127919; Goal!</span>';
+    if (count >= 200) return '<span class="achievement-badge badge-platinum">&#128293; Almost</span>';
+    if (count >= 150) return '<span class="achievement-badge badge-gold">&#9889; Strong</span>';
+    if (count >= 100) return '<span class="achievement-badge badge-silver">&#128170; Solid</span>';
+    if (count >= 50) return '<span class="achievement-badge badge-bronze">&#128077; Good</span>';
+    return '';
+}
+
+function getProgressClass(count, goal) {
+    const pct = (count / goal) * 100;
+    if (pct > 100) return 'exceeded';
+    if (pct >= 100) return 'complete';
+    if (pct >= 75) return 'high';
+    if (pct >= 50) return 'medium';
+    return 'low';
+}
+
+// Initial load
+fetchData();
+
+// Auto-refresh every 60 seconds
+setInterval(fetchData, 60000);
+
+// === TV MODE ===
+let currentTvMode = null;
+
+function initTvMode() {
+    const params = new URLSearchParams(window.location.search);
+    const mode = params.get('tv');
+    const btn = document.getElementById('tvToggleBtn');
+
+    if (mode === 'carousel') {
+        currentTvMode = mode;
+        document.body.classList.add('tv-mode', 'tv-carousel');
+        if (btn) {
+            btn.classList.add('active');
+            btn.href = '?';
+        }
+        startCarousel();
+    }
+}
+
+let carouselTimer = null;
+let carouselCurrentPanel = 0;
+const CAROUSEL_INTERVAL = 30000;
+
+function startCarousel() {
+    const panels = document.querySelectorAll('.tv-panel');
+    if (panels.length === 0) return;
+    showPanel(0);
+    startCarouselTimer();
+}
+
+function startCarouselTimer() {
+    if (carouselTimer) clearInterval(carouselTimer);
+    carouselTimer = setInterval(() => {
+        const panels = document.querySelectorAll('.tv-panel');
+        const nextPanel = (carouselCurrentPanel + 1) % panels.length;
+        showPanel(nextPanel);
+    }, CAROUSEL_INTERVAL);
+}
+
+function showPanel(index) {
+    const panels = document.querySelectorAll('.tv-panel');
+    const dots = document.querySelectorAll('.tv-dot');
+
+    panels.forEach((panel, i) => {
+        panel.classList.toggle('active', i === index);
+    });
+    dots.forEach((dot, i) => {
+        dot.classList.toggle('active', i === index);
+    });
+
+    carouselCurrentPanel = index;
+}
+
+document.addEventListener('click', function(e) {
+    const dot = e.target.closest('.tv-dot');
+    if (dot) {
+        e.preventDefault();
+        e.stopPropagation();
+        const panelIndex = parseInt(dot.dataset.panel);
+        showPanel(panelIndex);
+        startCarouselTimer();
+    }
+});
+
+initTvMode();
+// === END TV MODE ===
+</script>
+</body>
+</html>

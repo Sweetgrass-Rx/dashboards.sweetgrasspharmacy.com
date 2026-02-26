@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gross Profits Dashboard</title>
+    <link rel="stylesheet" href="../base_styles.css">
+    <style>
+    /* Dashboard Stats */
+    .dashboard-stats {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 25px 30px;
+        margin-bottom: 20px;
+        box-shadow: var(--shadow);
+    }
+
+    .stats-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+    }
+
+    .stat-block {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 1;
+        justify-content: center;
+    }
+
+    .stat-divider {
+        width: 1px;
+        height: 80px;
+        background: var(--border-color);
+        margin: 0 15px;
+    }
+
+    .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1;
+    }
+
+    .stat-number.highlight {
+        color: var(--accent-green);
+    }
+
+    .stat-number.blue {
+        color: var(--accent-blue);
+    }
+
+    .stat-number.purple {
+        color: var(--accent-purple);
+    }
+
+    .stat-details {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .stat-title {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .stat-subtitle {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+    }
+
+    .stat-trend {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.8rem;
+        margin-top: 4px;
+        white-space: nowrap;
+    }
+
+    .stat-trend.positive {
+        color: var(--accent-green);
+    }
+
+    .stat-trend.negative {
+        color: var(--accent-red);
+    }
+
+    .stat-trend.neutral {
+        color: var(--text-muted);
+    }
+
+    .trend-arrow {
+        font-size: 0.9rem;
+    }
+
+    .trend-value {
+        font-weight: 600;
+    }
+
+    .trend-pct {
+        font-weight: 500;
+    }
+
+    @media (max-width: 900px) {
+        .stats-row {
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .stat-divider {
+            display: none;
+        }
+        .stat-block {
+            min-width: 45%;
+        }
+    }
+
+    /* Table styles */
+    .profit-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .profit-table th {
+        position: sticky;
+        top: 0;
+        background: var(--bg-tertiary);
+        z-index: 10;
+    }
+
+    .profit-table td.currency {
+        text-align: right;
+        font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+    }
+
+    .profit-table td.currency.positive {
+        color: var(--accent-green);
+    }
+
+    .profit-table td.currency.negative {
+        color: var(--accent-red);
+    }
+
+    .profit-table td.currency.neutral {
+        color: var(--text-muted);
+    }
+
+    .table-container {
+        max-height: 600px;
+        overflow-y: auto;
+    }
+
+    /* Totals row */
+    .totals-row {
+        background: var(--bg-tertiary);
+        font-weight: 600;
+    }
+
+    .totals-row td {
+        border-top: 2px solid var(--border-color);
+    }
+
+    /* Sales rep group card */
+    .sales-rep-group {
+        margin-bottom: 20px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .sales-rep-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        background: var(--bg-tertiary);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .sales-rep-title {
+        font-weight: 600;
+        font-size: 1rem;
+        color: var(--text-primary);
+    }
+
+    .sales-rep-stat-value.positive {
+        color: var(--accent-green);
+    }
+
+    .sales-rep-stat-value.negative {
+        color: var(--accent-red);
+    }
+
+    .sales-rep-body {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sales-rep-table-scroll {
+        max-height: 350px;
+        overflow-y: auto;
+    }
+
+    .sales-rep-group .profit-table {
+        margin-bottom: 0;
+    }
+
+    .sales-rep-group .profit-table th {
+        position: sticky;
+        top: 0;
+        background: var(--bg-secondary);
+        z-index: 1;
+    }
+
+    .sales-rep-group .profit-table tbody tr {
+        background: #ffffff;
+    }
+
+    .sales-rep-group .profit-table tbody tr:hover {
+        background: #f8f9fa;
+    }
+
+    .sales-rep-group .totals-table {
+        border-top: 1px solid var(--border-color);
+    }
+
+    .sales-rep-group .totals-table td {
+        background: #f0f0f0;
+        font-weight: 600;
+        padding: 10px 8px;
+    }
+
+    /* Grand total card */
+    .grand-total-card {
+        background: var(--bg-tertiary);
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        padding: 16px 20px;
+        margin-top: 20px;
+    }
+
+    .grand-total-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .grand-total-label {
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: var(--text-primary);
+    }
+
+    .grand-total-values {
+        display: flex;
+        gap: 30px;
+        align-items: center;
+    }
+
+    .grand-total-stat {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+    }
+
+    .grand-total-stat-label {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+    }
+
+    .grand-total-stat-value {
+        font-weight: 700;
+        font-size: 1.2rem;
+        font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+    }
+
+    /* Filter controls */
+    .filter-row {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .filter-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        position: relative;
+    }
+
+    .filter-label {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+
+    .typeahead-container {
+        position: relative;
+    }
+
+    .typeahead-input {
+        padding: 8px 12px;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        font-size: 0.9rem;
+        min-width: 200px;
+        width: 200px;
+    }
+
+    .typeahead-input:focus {
+        outline: none;
+        border-color: var(--accent-blue);
+    }
+
+    .typeahead-input::placeholder {
+        color: var(--text-muted);
+    }
+
+    .typeahead-clear {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 18px;
+        height: 18px;
+        border: none;
+        background: var(--text-muted);
+        color: white;
+        border-radius: 50%;
+        font-size: 12px;
+        line-height: 1;
+        cursor: pointer;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+
+    .typeahead-clear:hover {
+        background: var(--text-secondary);
+    }
+
+    .typeahead-container.has-value .typeahead-clear {
+        display: flex;
+    }
+
+    .typeahead-container.has-value .typeahead-input {
+        padding-right: 30px;
+    }
+
+    .typeahead-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        max-height: 250px;
+        overflow-y: auto;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-top: none;
+        border-radius: 0 0 6px 6px;
+        box-shadow: var(--shadow-lg);
+        z-index: 100;
+        display: none;
+    }
+
+    .typeahead-dropdown.show {
+        display: block;
+    }
+
+    .typeahead-option {
+        padding: 8px 12px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        color: var(--text-primary);
+    }
+
+    .typeahead-option:hover,
+    .typeahead-option.highlighted {
+        background: var(--bg-tertiary);
+    }
+
+    .typeahead-option.selected {
+        background: var(--accent-blue);
+        color: white;
+    }
+
+    .typeahead-no-results {
+        padding: 8px 12px;
+        color: var(--text-muted);
+        font-size: 0.85rem;
+        font-style: italic;
+    }
+
+    .clear-filters-btn {
+        padding: 8px 16px;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        background: var(--bg-tertiary);
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .clear-filters-btn:hover {
+        background: var(--bg-secondary);
+        border-color: var(--accent-blue);
+        color: var(--accent-blue);
+    }
+
+    /* Period toggle (Week/Month) */
+    .period-toggle {
+        display: flex;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        overflow: hidden;
+    }
+
+    .period-toggle-btn {
+        padding: 8px 16px;
+        border: none;
+        background: var(--bg-secondary);
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .period-toggle-btn:not(:last-child) {
+        border-right: 1px solid var(--border-color);
+    }
+
+    .period-toggle-btn:hover {
+        background: var(--bg-tertiary);
+    }
+
+    .period-toggle-btn.active {
+        background: var(--accent-blue);
+        color: white;
+    }
+
+    /* Column widths */
+    .profit-table .col-org {
+        width: 40%;
+    }
+
+    .profit-table .col-prev {
+        width: 20%;
+        text-align: right;
+    }
+
+    .profit-table .col-current {
+        width: 20%;
+        text-align: right;
+    }
+
+    .profit-table .col-trend {
+        width: 20%;
+        text-align: right;
+    }
+
+    @media (max-width: 768px) {
+        .grand-total-row {
+            flex-direction: column;
+            gap: 15px;
+            align-items: flex-start;
+        }
+        .grand-total-values {
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .grand-total-stat {
+            align-items: flex-start;
+        }
+        .filter-row {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <a href="https://sweetgrasspharmacy.com" class="logo"><img src="https://sweetgrasspharmacy.com/wp-content/uploads/2023/09/Sweetgrass-Pharmacy-and-Compounding-logo.svg" alt="Sweetgrass Pharmacy"></a>
+            <nav>
+                <a href="../operations/pharmacist.html">Pharmacist</a>
+                <a href="../operations/call_center.html">Call Center</a>
+                <a href="../operations/prescription_entry.html">Rx Entry</a>
+                <a href="../operations/dispensing.html">Dispensing</a>
+                <a href="../operations/shipping.html">Shipping</a>
+                <a href="gross_profits.html" class="active">Gross Profits</a>
+                <a href="revenue_goals.html">Revenue Goals</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="page-header">
+            <h1>Gross Profits Dashboard</h1>
+            <p>Profitability by organization and sales representative</p>
+        </div>
+
+        <div class="filter-row" id="filterRow">
+            <div class="filter-group">
+                <label class="filter-label">Period:</label>
+                <div class="period-toggle">
+                    <button class="period-toggle-btn active" id="monthToggleBtn" onclick="setPeriodType('month')">Month</button>
+                    <button class="period-toggle-btn" id="weekToggleBtn" onclick="setPeriodType('week')">Week</button>
+                </div>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">Sales Rep:</label>
+                <div class="typeahead-container" id="salesRepTypeahead">
+                    <input type="text" class="typeahead-input" id="salesRepInput" placeholder="All Sales Reps" autocomplete="off">
+                    <button type="button" class="typeahead-clear" id="salesRepClear" onclick="clearSalesRepFilter()">&times;</button>
+                    <div class="typeahead-dropdown" id="salesRepDropdown"></div>
+                </div>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">Organization:</label>
+                <div class="typeahead-container" id="orgTypeahead">
+                    <input type="text" class="typeahead-input" id="orgInput" placeholder="All Organizations" autocomplete="off">
+                    <button type="button" class="typeahead-clear" id="orgClear" onclick="clearOrgFilter()">&times;</button>
+                    <div class="typeahead-dropdown" id="orgDropdown"></div>
+                </div>
+            </div>
+            <button class="clear-filters-btn" onclick="clearFilters()">Clear Filters</button>
+        </div>
+
+        <div class="day-filters" id="periodFilters">
+            <div class="loading">Loading periods...</div>
+        </div>
+
+        <!-- Dashboard Stats -->
+        <div class="dashboard-stats" id="dashboardStats">
+            <div class="stats-row">
+                <div class="stat-block">
+                    <div class="stat-number highlight" id="totalProfit">--</div>
+                    <div class="stat-details">
+                        <div class="stat-title">Total Profit</div>
+                        <div class="stat-trend neutral" id="profitTrend">
+                            <span class="trend-arrow"></span>
+                            <span class="trend-value"></span>
+                            <span class="trend-pct"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-divider"></div>
+
+                <div class="stat-block">
+                    <div class="stat-number blue" id="totalRevenue">--</div>
+                    <div class="stat-details">
+                        <div class="stat-title">Total Revenue</div>
+                        <div class="stat-trend neutral" id="revenueTrend">
+                            <span class="trend-arrow"></span>
+                            <span class="trend-value"></span>
+                            <span class="trend-pct"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-divider"></div>
+
+                <div class="stat-block">
+                    <div class="stat-number" id="orgCount">--</div>
+                    <div class="stat-details">
+                        <div class="stat-title">Organizations</div>
+                        <div class="stat-subtitle">With transactions</div>
+                    </div>
+                </div>
+
+                <div class="stat-divider"></div>
+
+                <div class="stat-block">
+                    <div class="stat-number purple" id="salesRepCount">--</div>
+                    <div class="stat-details">
+                        <div class="stat-title">Sales Reps</div>
+                        <div class="stat-subtitle">Active this period</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="profitTableContainer">
+            <div class="loading">Loading data...</div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="refresh-indicator">
+                <span class="refresh-dot"></span>
+                <span>Auto-refresh enabled</span>
+            </div>
+        </div>
+    </footer>
+
+<script>
+const DATA_BASE = '../data/';
+
+let periodType = 'month'; // 'month' or 'week'
+let selectedYear = null;
+let selectedMonth = null;
+let selectedWeek = null; // Week start date as string 'YYYY-MM-DD'
+let selectedSalesRep = '';
+let selectedOrganization = '';
+let availableMonths = [];
+let availableWeeks = [];
+let allSalesReps = [];
+let allOrganizations = [];
+let fullTableData = []; // Full dataset for client-side filtering
+let currentData = null; // Full JSON response for current period
+
+// Typeahead state
+let highlightedIndex = -1;
+
+function setPeriodType(type) {
+    periodType = type;
+    document.getElementById('monthToggleBtn').classList.toggle('active', type === 'month');
+    document.getElementById('weekToggleBtn').classList.toggle('active', type === 'week');
+    document.getElementById('profitTableContainer').innerHTML = '<div class="loading">Loading data...</div>';
+    // Reset selection when switching types
+    if (type === 'month') {
+        selectedWeek = null;
+    } else {
+        selectedYear = null;
+        selectedMonth = null;
+    }
+    // Load the default file first, which contains availableMonths/availableWeeks
+    fetchDefaultData();
+}
+
+function buildDataUrl() {
+    if (periodType === 'month' && selectedYear && selectedMonth) {
+        const monthStr = String(selectedMonth).padStart(2, '0');
+        return DATA_BASE + 'gross_profits_' + selectedYear + '_' + monthStr + '.json';
+    }
+    if (periodType === 'week' && selectedWeek) {
+        return DATA_BASE + 'gross_profits_week_' + selectedWeek + '.json';
+    }
+    return DATA_BASE + 'gross_profits.json';
+}
+
+async function fetchDefaultData() {
+    try {
+        const response = await fetch(DATA_BASE + 'gross_profits.json');
+        if (!response.ok) throw new Error('Failed to fetch default data');
+        const data = await response.json();
+
+        // Store available periods from default
+        availableMonths = data.availableMonths || [];
+        availableWeeks = data.availableWeeks || [];
+
+        // Set initial selection based on period type
+        if (periodType === 'month' && data.selectedMonth) {
+            selectedYear = data.selectedMonth.year;
+            selectedMonth = data.selectedMonth.month;
+        }
+        if (periodType === 'week' && data.selectedWeek) {
+            selectedWeek = data.selectedWeek.weekStart;
+        }
+
+        // Store filter options
+        storeFilterOptions(data);
+
+        // Store full data for client-side filtering
+        currentData = data;
+        fullTableData = data.tableData || [];
+
+        renderPeriodFilters();
+        applyFiltersAndRender();
+
+    } catch (error) {
+        console.error('Error fetching default data:', error);
+        document.getElementById('profitTableContainer').innerHTML = '<p class="empty-state">Error loading data</p>';
+        document.getElementById('periodFilters').innerHTML = '<p class="empty-state">Error loading periods</p>';
+    }
+}
+
+async function fetchData() {
+    try {
+        const url = buildDataUrl();
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Failed to fetch data from ' + url);
+        const data = await response.json();
+
+        // Store available periods
+        availableMonths = data.availableMonths || [];
+        availableWeeks = data.availableWeeks || [];
+
+        if (periodType === 'month' && data.selectedMonth) {
+            selectedYear = data.selectedMonth.year;
+            selectedMonth = data.selectedMonth.month;
+        }
+        if (periodType === 'week' && data.selectedWeek) {
+            selectedWeek = data.selectedWeek.weekStart;
+        }
+
+        // Store filter options
+        storeFilterOptions(data);
+
+        // Store full data for client-side filtering
+        currentData = data;
+        fullTableData = data.tableData || [];
+
+        renderPeriodFilters();
+        applyFiltersAndRender();
+
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        document.getElementById('profitTableContainer').innerHTML = '<p class="empty-state">Error loading data</p>';
+    }
+}
+
+function storeFilterOptions(data) {
+    if (data.filters) {
+        const salesRepMap = {};
+        for (const rep of (data.filters.salesReps || [])) {
+            const key = rep.toLowerCase();
+            if (!salesRepMap[key]) {
+                salesRepMap[key] = rep;
+            }
+        }
+        allSalesReps = Object.values(salesRepMap).sort(function(a, b) {
+            return a.toLowerCase().localeCompare(b.toLowerCase());
+        });
+
+        const orgMap = {};
+        for (const org of (data.filters.organizations || [])) {
+            const key = org.toLowerCase();
+            if (!orgMap[key]) {
+                orgMap[key] = org;
+            }
+        }
+        allOrganizations = Object.values(orgMap).sort(function(a, b) {
+            return a.toLowerCase().localeCompare(b.toLowerCase());
+        });
+    }
+}
+
+function applyFiltersAndRender() {
+    if (!currentData) return;
+
+    // Client-side filtering of tableData
+    let filteredData = fullTableData;
+
+    if (selectedSalesRep) {
+        const repLower = selectedSalesRep.toLowerCase();
+        filteredData = filteredData.filter(function(row) {
+            return row.salesRep.toLowerCase() === repLower;
+        });
+    }
+
+    if (selectedOrganization) {
+        const orgLower = selectedOrganization.toLowerCase();
+        filteredData = filteredData.filter(function(row) {
+            return row.organizationName.toLowerCase() === orgLower;
+        });
+    }
+
+    // Recompute summary from filtered data
+    var filteredSummary;
+    var filteredTrend;
+
+    if (selectedSalesRep || selectedOrganization) {
+        var grandTotalProfit = 0;
+        var grandTotalRevenue = 0;
+        var repSet = {};
+        var orgSet = {};
+        var prevTotalProfit = 0;
+
+        for (var i = 0; i < filteredData.length; i++) {
+            var row = filteredData[i];
+            grandTotalProfit += row.totalProfit;
+            grandTotalRevenue += row.totalRevenue;
+            prevTotalProfit += row.prevProfit;
+            repSet[row.salesRep.toLowerCase()] = true;
+            orgSet[row.organizationName.toLowerCase()] = true;
+        }
+
+        var profitDiff = grandTotalProfit - prevTotalProfit;
+        var profitPctChange = prevTotalProfit !== 0 ? ((profitDiff / Math.abs(prevTotalProfit)) * 100) : (grandTotalProfit > 0 ? 100 : 0);
+
+        filteredSummary = {
+            grandTotalProfit: grandTotalProfit,
+            grandTotalRevenue: grandTotalRevenue,
+            organizationCount: Object.keys(orgSet).length,
+            salesRepCount: Object.keys(repSet).length
+        };
+        filteredTrend = {
+            profitDiff: profitDiff,
+            profitPctChange: profitPctChange,
+            revenueDiff: 0,
+            revenuePctChange: 0,
+            prevTotalProfit: prevTotalProfit
+        };
+    } else {
+        filteredSummary = currentData.summary;
+        filteredTrend = currentData.trend;
+    }
+
+    renderStats(filteredSummary, filteredTrend);
+    renderTables(filteredData, filteredSummary, filteredTrend);
+}
+
+function renderPeriodFilters() {
+    var container = document.getElementById('periodFilters');
+
+    if (periodType === 'month') {
+        if (availableMonths.length === 0) {
+            container.innerHTML = '<p class="empty-state">No data available</p>';
+            return;
+        }
+        container.innerHTML = availableMonths.map(function(m) {
+            var isActive = m.year === selectedYear && m.month === selectedMonth;
+            return '<button class="day-btn ' + (isActive ? 'active' : '') + '" onclick="selectMonth(' + m.year + ', ' + m.month + ')">' + m.label + '</button>';
+        }).join('');
+    } else {
+        if (availableWeeks.length === 0) {
+            container.innerHTML = '<p class="empty-state">No data available</p>';
+            return;
+        }
+        container.innerHTML = availableWeeks.map(function(w) {
+            var isActive = w.weekStart === selectedWeek;
+            return '<button class="day-btn ' + (isActive ? 'active' : '') + '" onclick="selectWeek(\'' + w.weekStart + '\')">' + w.label + '</button>';
+        }).join('');
+    }
+}
+
+function selectMonth(year, month) {
+    selectedYear = year;
+    selectedMonth = month;
+    document.getElementById('profitTableContainer').innerHTML = '<div class="loading">Loading data...</div>';
+    fetchData();
+}
+
+function selectWeek(weekStart) {
+    selectedWeek = weekStart;
+    document.getElementById('profitTableContainer').innerHTML = '<div class="loading">Loading data...</div>';
+    fetchData();
+}
+
+// Typeahead functions
+function setupTypeahead(inputId, dropdownId, getOptions, filterType) {
+    var input = document.getElementById(inputId);
+    var dropdown = document.getElementById(dropdownId);
+
+    input.addEventListener('focus', function() {
+        showDropdown(inputId, dropdownId, getOptions);
+    });
+
+    input.addEventListener('input', function() {
+        highlightedIndex = -1;
+        showDropdown(inputId, dropdownId, getOptions);
+    });
+
+    input.addEventListener('keydown', function(e) {
+        handleTypeaheadKeydown(e, inputId, dropdownId, getOptions);
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('#' + inputId) && !e.target.closest('#' + dropdownId)) {
+            dropdown.classList.remove('show');
+            highlightedIndex = -1;
+        }
+    });
+}
+
+function showDropdown(inputId, dropdownId, getOptions) {
+    var input = document.getElementById(inputId);
+    var dropdown = document.getElementById(dropdownId);
+    var query = input.value.toLowerCase();
+    var options = getOptions();
+
+    var filtered = query
+        ? options.filter(function(opt) { return opt.toLowerCase().includes(query); })
+        : options;
+
+    if (filtered.length === 0) {
+        dropdown.innerHTML = '<div class="typeahead-no-results">No matches found</div>';
+    } else {
+        dropdown.innerHTML = filtered.map(function(opt, idx) {
+            var isHighlighted = idx === highlightedIndex ? 'highlighted' : '';
+            var escapedOpt = opt.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            return '<div class="typeahead-option ' + isHighlighted + '" data-value="' + opt.replace(/"/g, '&quot;') + '" onclick="selectTypeaheadOption(\'' + inputId + '\', \'' + escapedOpt + '\')">' + opt + '</div>';
+        }).join('');
+    }
+
+    dropdown.classList.add('show');
+}
+
+function handleTypeaheadKeydown(e, inputId, dropdownId, getOptions) {
+    var dropdown = document.getElementById(dropdownId);
+    var options = dropdown.querySelectorAll('.typeahead-option');
+
+    if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        highlightedIndex = Math.min(highlightedIndex + 1, options.length - 1);
+        updateHighlight(options);
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        highlightedIndex = Math.max(highlightedIndex - 1, 0);
+        updateHighlight(options);
+    } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (highlightedIndex >= 0 && options[highlightedIndex]) {
+            var value = options[highlightedIndex].dataset.value;
+            selectTypeaheadOption(inputId, value);
+        }
+    } else if (e.key === 'Escape') {
+        dropdown.classList.remove('show');
+        highlightedIndex = -1;
+    }
+}
+
+function updateHighlight(options) {
+    options.forEach(function(opt, idx) {
+        opt.classList.toggle('highlighted', idx === highlightedIndex);
+    });
+}
+
+function selectTypeaheadOption(inputId, value) {
+    var input = document.getElementById(inputId);
+    var container = input.parentElement;
+    var dropdown = container.querySelector('.typeahead-dropdown');
+
+    input.value = value;
+    dropdown.classList.remove('show');
+    highlightedIndex = -1;
+
+    // Add has-value class to show clear button
+    container.classList.add('has-value');
+
+    // Set the appropriate filter
+    if (inputId === 'salesRepInput') {
+        selectedSalesRep = value;
+    } else if (inputId === 'orgInput') {
+        selectedOrganization = value;
+    }
+
+    // Client-side filter and re-render (no re-fetch)
+    applyFiltersAndRender();
+}
+
+function clearSalesRepFilter() {
+    selectedSalesRep = '';
+    document.getElementById('salesRepInput').value = '';
+    document.getElementById('salesRepTypeahead').classList.remove('has-value');
+    applyFiltersAndRender();
+}
+
+function clearOrgFilter() {
+    selectedOrganization = '';
+    document.getElementById('orgInput').value = '';
+    document.getElementById('orgTypeahead').classList.remove('has-value');
+    applyFiltersAndRender();
+}
+
+function clearFilters() {
+    selectedSalesRep = '';
+    selectedOrganization = '';
+    document.getElementById('salesRepInput').value = '';
+    document.getElementById('orgInput').value = '';
+    document.getElementById('salesRepTypeahead').classList.remove('has-value');
+    document.getElementById('orgTypeahead').classList.remove('has-value');
+    applyFiltersAndRender();
+}
+
+// Initialize typeaheads after DOM loads
+document.addEventListener('DOMContentLoaded', function() {
+    setupTypeahead('salesRepInput', 'salesRepDropdown', function() { return allSalesReps; }, 'salesRep');
+    setupTypeahead('orgInput', 'orgDropdown', function() { return allOrganizations; }, 'organization');
+});
+
+function formatCurrency(value) {
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(value);
+}
+
+function formatTrendValue(value) {
+    var prefix = value >= 0 ? '+' : '';
+    return prefix + formatCurrency(value);
+}
+
+function formatTrendPct(value) {
+    var prefix = value >= 0 ? '+' : '';
+    return '(' + prefix + value.toFixed(1) + '%)';
+}
+
+function updateTrendIndicator(elementId, diff, pctChange) {
+    var element = document.getElementById(elementId);
+    if (!element) return;
+    var arrow = element.querySelector('.trend-arrow');
+    var valueSpan = element.querySelector('.trend-value');
+    var pctSpan = element.querySelector('.trend-pct');
+
+    // Update classes
+    element.classList.remove('positive', 'negative', 'neutral');
+    if (diff > 0) {
+        element.classList.add('positive');
+        arrow.textContent = '\u2191'; // Up arrow
+    } else if (diff < 0) {
+        element.classList.add('negative');
+        arrow.textContent = '\u2193'; // Down arrow
+    } else {
+        element.classList.add('neutral');
+        arrow.textContent = '\u2192'; // Right arrow
+    }
+
+    valueSpan.textContent = formatTrendValue(diff);
+    pctSpan.textContent = formatTrendPct(pctChange);
+}
+
+function renderStats(summary, trend) {
+    document.getElementById('totalProfit').textContent = formatCurrency(summary.grandTotalProfit);
+    document.getElementById('totalRevenue').textContent = formatCurrency(summary.grandTotalRevenue);
+    document.getElementById('orgCount').textContent = summary.organizationCount;
+    document.getElementById('salesRepCount').textContent = summary.salesRepCount;
+
+    if (trend) {
+        updateTrendIndicator('profitTrend', trend.profitDiff, trend.profitPctChange);
+        updateTrendIndicator('revenueTrend', trend.revenueDiff, trend.revenuePctChange);
+    }
+}
+
+function renderTables(tableData, summary, trend) {
+    if (tableData.length === 0) {
+        document.getElementById('profitTableContainer').innerHTML = '<p class="empty-state">No data available for this period</p>';
+        return;
+    }
+
+    // Group data by sales rep (case-insensitive)
+    var groupedData = {};
+    var salesRepDisplayNames = {};
+    for (var i = 0; i < tableData.length; i++) {
+        var row = tableData[i];
+        var key = row.salesRep.toLowerCase();
+        if (!groupedData[key]) {
+            groupedData[key] = {
+                rows: [],
+                prevTotal: 0,
+                currentTotal: 0
+            };
+            salesRepDisplayNames[key] = row.salesRep;
+        }
+        groupedData[key].rows.push(row);
+        groupedData[key].prevTotal += row.prevProfit;
+        groupedData[key].currentTotal += row.totalProfit;
+    }
+
+    // Sort sales reps alphabetically
+    var sortedSalesRepKeys = Object.keys(groupedData).sort(function(a, b) {
+        return a.localeCompare(b);
+    });
+
+    var html = '';
+
+    for (var k = 0; k < sortedSalesRepKeys.length; k++) {
+        var repKey = sortedSalesRepKeys[k];
+        var group = groupedData[repKey];
+        var salesRep = salesRepDisplayNames[repKey];
+        var groupDiff = group.currentTotal - group.prevTotal;
+        var groupPct = group.prevTotal > 0
+            ? ((group.currentTotal / group.prevTotal) - 1) * 100
+            : (group.currentTotal > 0 ? 100 : -100);
+        var groupTrendClass = groupDiff > 0 ? 'positive' : (groupDiff < 0 ? 'negative' : 'neutral');
+        var groupArrow = groupDiff > 0 ? '\u2191' : (groupDiff < 0 ? '\u2193' : '\u2192');
+        var groupPrefix = groupPct >= 0 ? '+' : '';
+
+        html += '<div class="sales-rep-group">';
+        html += '<div class="sales-rep-header">';
+        html += '<div class="sales-rep-title">';
+        html += salesRep + ' <span style="color: var(--text-muted); font-weight: normal;">(' + group.rows.length + ' organizations)</span>';
+        html += '</div>';
+        html += '</div>';
+        html += '<div class="sales-rep-body">';
+        html += '<div class="sales-rep-table-scroll">';
+        html += '<table class="profit-table">';
+        html += '<thead><tr>';
+        html += '<th class="col-org">Organization Name</th>';
+        html += '<th class="col-prev">Previous</th>';
+        html += '<th class="col-current">Current</th>';
+        html += '<th class="col-trend">Trend</th>';
+        html += '</tr></thead>';
+        html += '<tbody>';
+
+        for (var r = 0; r < group.rows.length; r++) {
+            var dataRow = group.rows[r];
+            var profitClass = dataRow.totalProfit >= 0 ? 'positive' : 'negative';
+            var prevClass = dataRow.prevProfit >= 0 ? 'positive' : 'negative';
+            var trendClass = dataRow.profitDiff > 0 ? 'positive' : (dataRow.profitDiff < 0 ? 'negative' : 'neutral');
+            var trendArrow = dataRow.profitDiff > 0 ? '\u2191' : (dataRow.profitDiff < 0 ? '\u2193' : '\u2192');
+            var trendPrefix = dataRow.profitPctChange >= 0 ? '+' : '';
+            var trendText = trendArrow + ' ' + trendPrefix + dataRow.profitPctChange.toFixed(1) + '%';
+
+            html += '<tr>';
+            html += '<td class="col-org">' + dataRow.organizationName + '</td>';
+            html += '<td class="currency col-prev ' + prevClass + '">' + formatCurrency(dataRow.prevProfit) + '</td>';
+            html += '<td class="currency col-current ' + profitClass + '">' + formatCurrency(dataRow.totalProfit) + '</td>';
+            html += '<td class="currency col-trend ' + trendClass + '" title="Diff: ' + trendPrefix + formatCurrency(dataRow.profitDiff) + '">' + trendText + '</td>';
+            html += '</tr>';
+        }
+
+        html += '</tbody></table></div>';
+
+        // Totals row
+        html += '<table class="profit-table totals-table"><tr>';
+        html += '<td class="col-org">Total</td>';
+        html += '<td class="currency col-prev">' + formatCurrency(group.prevTotal) + '</td>';
+        html += '<td class="currency col-current">' + formatCurrency(group.currentTotal) + '</td>';
+        html += '<td class="currency col-trend ' + groupTrendClass + '">' + groupArrow + ' ' + groupPrefix + groupPct.toFixed(1) + '%</td>';
+        html += '</tr></table>';
+
+        html += '</div></div>';
+    }
+
+    // Grand total card
+    if (trend) {
+        var totalTrendClass = trend.profitDiff > 0 ? 'positive' : (trend.profitDiff < 0 ? 'negative' : 'neutral');
+        var totalTrendArrow = trend.profitDiff > 0 ? '\u2191' : (trend.profitDiff < 0 ? '\u2193' : '\u2192');
+        var totalTrendPrefix = trend.profitPctChange >= 0 ? '+' : '';
+
+        html += '<div class="grand-total-card">';
+        html += '<div class="grand-total-row">';
+        html += '<div class="grand-total-label">Grand Total (' + sortedSalesRepKeys.length + ' territories, ' + tableData.length + ' organizations)</div>';
+        html += '<div class="grand-total-values">';
+        html += '<div class="grand-total-stat">';
+        html += '<span class="grand-total-stat-label">Previous</span>';
+        html += '<span class="grand-total-stat-value">' + formatCurrency(trend.prevTotalProfit) + '</span>';
+        html += '</div>';
+        html += '<div class="grand-total-stat">';
+        html += '<span class="grand-total-stat-label">Current</span>';
+        html += '<span class="grand-total-stat-value positive">' + formatCurrency(summary.grandTotalProfit) + '</span>';
+        html += '</div>';
+        html += '<div class="grand-total-stat">';
+        html += '<span class="grand-total-stat-label">Trend</span>';
+        html += '<span class="grand-total-stat-value ' + totalTrendClass + '">' + totalTrendArrow + ' ' + totalTrendPrefix + trend.profitPctChange.toFixed(1) + '%</span>';
+        html += '</div>';
+        html += '</div>';
+        html += '</div>';
+        html += '</div>';
+    }
+
+    document.getElementById('profitTableContainer').innerHTML = html;
+}
+
+// Initial load
+fetchDefaultData();
+
+// Auto-refresh every 60 seconds
+setInterval(function() {
+    fetchData();
+}, 60000);
+</script>
+</body>
+</html>
