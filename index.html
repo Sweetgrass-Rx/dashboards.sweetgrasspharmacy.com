@@ -81,26 +81,6 @@
         line-height: 1.5;
     }
 
-    .card-links {
-        margin-top: 14px;
-        padding-top: 12px;
-        border-top: 1px solid var(--border-color);
-        display: flex;
-        gap: 16px;
-        flex-wrap: wrap;
-    }
-
-    .card-link {
-        font-size: 0.8rem;
-        color: var(--accent-blue);
-        text-decoration: none;
-        font-weight: 500;
-    }
-
-    .card-link:hover {
-        text-decoration: underline;
-    }
-
     .snapshot-note {
         text-align: center;
         color: var(--text-muted);
@@ -132,20 +112,26 @@
                     <div class="card-icon">&#128222;</div>
                     <div class="card-name">Call Center</div>
                     <div class="card-description">Daily call volume, agent leaderboard, answer rates, and hot item tracking.</div>
-                    <div class="card-links">
-                        <a href="operations/call_center.html" class="card-link" onclick="event.stopPropagation()">Daily</a>
-                        <a href="operations/call_center_weekly.html" class="card-link" onclick="event.stopPropagation()">Weekly Summary</a>
-                        <a href="operations/call_center_detail.html" class="card-link" onclick="event.stopPropagation()">Detail</a>
-                    </div>
+                </a>
+                <a href="operations/call_center_weekly.html" class="dashboard-card">
+                    <div class="card-icon">&#128197;</div>
+                    <div class="card-name">Call Center Weekly</div>
+                    <div class="card-description">Weekly aggregate call metrics, daily breakdown, and top agent rankings.</div>
+                </a>
+                <a href="operations/call_center_detail.html" class="dashboard-card">
+                    <div class="card-icon">&#128200;</div>
+                    <div class="card-name">Call Center Detail</div>
+                    <div class="card-description">Detailed agent breakdown by call type with individual performance metrics.</div>
                 </a>
                 <a href="operations/prescription_entry.html" class="dashboard-card">
                     <div class="card-icon">&#128203;</div>
                     <div class="card-name">Prescription Entry</div>
                     <div class="card-description">Daily Rx entry performance, employee leaderboard, goals, and personal records.</div>
-                    <div class="card-links">
-                        <a href="operations/prescription_entry.html" class="card-link" onclick="event.stopPropagation()">Daily</a>
-                        <a href="operations/prescription_entry_weekly.html" class="card-link" onclick="event.stopPropagation()">Weekly Summary</a>
-                    </div>
+                </a>
+                <a href="operations/prescription_entry_weekly.html" class="dashboard-card">
+                    <div class="card-icon">&#128202;</div>
+                    <div class="card-name">Prescription Entry Weekly</div>
+                    <div class="card-description">Weekly Rx entry totals, daily breakdown, and top employee rankings.</div>
                 </a>
             </div>
         </div>
