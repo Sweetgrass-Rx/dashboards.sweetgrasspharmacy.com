@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sweetgrass Pharmacy Dashboards</title>
+    <link rel="stylesheet" href="base_styles.css">
+    <style>
+    .hero {
+        text-align: center;
+        padding: 40px 20px 30px;
+    }
+
+    .hero h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+    }
+
+    .hero p {
+        color: var(--text-secondary);
+        font-size: 1rem;
+    }
+
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin-bottom: 40px;
+    }
+
+    .category-section {
+        margin-bottom: 40px;
+    }
+
+    .category-title {
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--text-secondary);
+        margin-bottom: 15px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .dashboard-card {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: var(--shadow);
+        text-decoration: none;
+        color: inherit;
+        transition: all 0.2s;
+        display: block;
+    }
+
+    .dashboard-card:hover {
+        border-color: var(--accent-blue);
+        box-shadow: var(--shadow-lg);
+        transform: translateY(-2px);
+    }
+
+    .card-icon {
+        font-size: 1.8rem;
+        margin-bottom: 12px;
+    }
+
+    .card-name {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 6px;
+    }
+
+    .card-description {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        line-height: 1.5;
+    }
+
+    .card-links {
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border-color);
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+
+    .card-link {
+        font-size: 0.8rem;
+        color: var(--accent-blue);
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .card-link:hover {
+        text-decoration: underline;
+    }
+
+    .snapshot-note {
+        text-align: center;
+        color: var(--text-muted);
+        font-size: 0.85rem;
+        padding: 20px;
+    }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <a href="https://sweetgrasspharmacy.com" class="logo"><img src="https://sweetgrasspharmacy.com/wp-content/uploads/2023/09/Sweetgrass-Pharmacy-and-Compounding-logo.svg" alt="Sweetgrass Pharmacy"></a>
+            <nav>
+                <a href="index.html" class="active">Home</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="hero">
+            <h1>Sweetgrass Pharmacy Dashboards</h1>
+            <p>Operational and financial performance snapshots</p>
+        </div>
+
+        <div class="category-section">
+            <div class="category-title">Operations</div>
+            <div class="dashboard-grid">
+                <a href="operations/call_center.html" class="dashboard-card">
+                    <div class="card-icon">&#128222;</div>
+                    <div class="card-name">Call Center</div>
+                    <div class="card-description">Daily call volume, agent leaderboard, answer rates, and hot item tracking.</div>
+                    <div class="card-links">
+                        <a href="operations/call_center.html" class="card-link" onclick="event.stopPropagation()">Daily</a>
+                        <a href="operations/call_center_weekly.html" class="card-link" onclick="event.stopPropagation()">Weekly Summary</a>
+                        <a href="operations/call_center_detail.html" class="card-link" onclick="event.stopPropagation()">Detail</a>
+                    </div>
+                </a>
+                <a href="operations/prescription_entry.html" class="dashboard-card">
+                    <div class="card-icon">&#128203;</div>
+                    <div class="card-name">Prescription Entry</div>
+                    <div class="card-description">Daily Rx entry performance, employee leaderboard, goals, and personal records.</div>
+                    <div class="card-links">
+                        <a href="operations/prescription_entry.html" class="card-link" onclick="event.stopPropagation()">Daily</a>
+                        <a href="operations/prescription_entry_weekly.html" class="card-link" onclick="event.stopPropagation()">Weekly Summary</a>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <div class="category-section">
+            <div class="category-title">Finance</div>
+            <div class="dashboard-grid">
+                <a href="finance/gross_profits.html" class="dashboard-card">
+                    <div class="card-icon">&#128176;</div>
+                    <div class="card-name">Gross Profits</div>
+                    <div class="card-description">Profitability by organization and sales representative with monthly and weekly views.</div>
+                </a>
+                <a href="finance/org_revenue_scoreboard.html" class="dashboard-card">
+                    <div class="card-icon">&#127942;</div>
+                    <div class="card-name">Org Revenue Scoreboard</div>
+                    <div class="card-description">Monthly revenue by organization with projections and trend analysis.</div>
+                </a>
+            </div>
+        </div>
+
+        <div class="snapshot-note">
+            Data is refreshed periodically. These dashboards reflect the most recent published snapshot.
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="refresh-indicator">
+                <span class="refresh-dot"></span>
+                <span>Static snapshot</span>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
