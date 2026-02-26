@@ -206,6 +206,110 @@
     .hot-item-stat-label { font-size: 0.75rem; color: #5d4037; text-transform: uppercase; letter-spacing: 1px; margin-top: 8px; font-weight: 600; }
     .hot-item-empty { text-align: center; color: #5d4037; font-style: italic; }
 
+    .hot-item-trend-link {
+        color: inherit;
+        text-decoration: none;
+        transition: opacity 0.2s;
+    }
+    .hot-item-trend-link:hover {
+        opacity: 0.8;
+        text-decoration: underline;
+    }
+
+    .hot-item-stat-value:hover {
+        color: #7f0000;
+    }
+
+    @keyframes neonFlicker {
+        0%, 100% { opacity: 1; }
+        92% { opacity: 1; }
+        93% { opacity: 0.8; }
+        94% { opacity: 1; }
+        96% { opacity: 0.9; }
+        97% { opacity: 1; }
+    }
+
+    @keyframes neonPulse {
+        0%, 100% {
+            text-shadow:
+                0 0 5px #fff,
+                0 0 10px #fff,
+                0 0 20px #ff6b6b,
+                0 0 40px #ff6b6b,
+                0 0 60px #ff6b6b;
+        }
+        50% {
+            text-shadow:
+                0 0 3px #fff,
+                0 0 8px #fff,
+                0 0 15px #ff6b6b,
+                0 0 30px #ff6b6b,
+                0 0 45px #ff6b6b;
+        }
+    }
+
+    .task-detail-link {
+        color: var(--accent-blue);
+        text-decoration: none;
+        font-weight: 600;
+    }
+    .task-detail-link:hover {
+        text-decoration: underline;
+    }
+
+    /* Tasks Breakdown Modal */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-content {
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        max-width: 500px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .modal-header h3 { margin: 0; font-size: 1.1rem; color: var(--text-primary); }
+    .modal-close {
+        background: none; border: none; font-size: 1.5rem;
+        color: var(--text-secondary); cursor: pointer; padding: 0; line-height: 1;
+    }
+    .modal-close:hover { color: var(--text-primary); }
+    .modal-body { padding: 20px; }
+
+    .task-breakdown-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .task-breakdown-table th {
+        text-align: left; padding: 8px 12px; font-size: 0.7rem;
+        text-transform: uppercase; letter-spacing: 0.5px;
+        color: var(--text-secondary); border-bottom: 2px solid var(--border-color);
+    }
+    .task-breakdown-table th.number { text-align: right; }
+    .task-breakdown-table td { padding: 8px 12px; border-bottom: 1px solid var(--border-color); }
+    .task-breakdown-table td.number {
+        text-align: right; font-variant-numeric: tabular-nums; font-weight: 600;
+    }
+    .task-breakdown-total {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 12px 0; margin-top: 8px; border-top: 2px solid var(--border-color);
+        font-weight: 700; font-size: 0.95rem;
+    }
+
     @media (max-width: 768px) {
         .charts-grid { grid-template-columns: 1fr; }
         .progress-cell { min-width: 100px; }
@@ -368,6 +472,17 @@
     <span class="tv-dot" data-panel="1"></span>
 </div>
 
+<!-- Tasks Breakdown Modal -->
+<div class="modal-overlay" id="tasksModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="tasksModalTitle">Task Breakdown</h3>
+            <button class="modal-close" onclick="closeTasksModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="tasksModalBody"></div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
     </main>
@@ -387,6 +502,65 @@ let currentDate = null;
 let callTrendChart = null;
 let speedFunnelChart = null;
 let hotItemData = null;
+let currentSortedAgents = [];
+
+// Task type display labels for modal
+const TASK_TYPE_LABELS = {
+    smsReceived: 'SMS Received',
+    smsSent: 'SMS Sent',
+    patientRefillRequest: 'Patient Refill Request',
+    prescriptionsReworked: 'Prescriptions Reworked',
+    prescriptionClarification: 'Prescription Clarification',
+    callPatientEntered: 'Call Patient Entered',
+    callPatientCompleted: 'Call Patient Completed',
+    patientPortalPaymentUpdate: 'Patient Portal Payment Update',
+    processingOrder: 'Processing Order',
+};
+
+function showTasksModal(index) {
+    const agent = currentSortedAgents[index];
+    if (!agent) return;
+
+    const breakdown = agent.taskBreakdown || {};
+    const total = agent.tasksTotal || 0;
+
+    document.getElementById('tasksModalTitle').textContent = `Task Breakdown \u2014 ${agent.name}`;
+
+    let rows = '';
+    for (const [key, label] of Object.entries(TASK_TYPE_LABELS)) {
+        const count = breakdown[key] || 0;
+        if (count > 0) {
+            rows += `<tr><td>${label}</td><td class="number">${count}</td></tr>`;
+        }
+    }
+
+    if (!rows) {
+        rows = '<tr><td colspan="2" style="text-align: center; color: var(--text-muted); padding: 20px;">No tasks recorded</td></tr>';
+    }
+
+    document.getElementById('tasksModalBody').innerHTML = `
+        <table class="task-breakdown-table">
+            <thead><tr><th>Task Type</th><th class="number">Count</th></tr></thead>
+            <tbody>${rows}</tbody>
+        </table>
+        <div class="task-breakdown-total">
+            <span>Total</span>
+            <span>${total}</span>
+        </div>
+    `;
+    document.getElementById('tasksModal').classList.add('active');
+}
+
+function closeTasksModal() {
+    document.getElementById('tasksModal').classList.remove('active');
+}
+
+document.getElementById('tasksModal').addEventListener('click', function(e) {
+    if (e.target === this) closeTasksModal();
+});
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeTasksModal();
+});
 
 // Data file paths (static JSON)
 const DATA_BASE = '../data/';
@@ -662,6 +836,7 @@ function renderData() {
 
     const activeAgents = agents.filter(a => a.answered > 0);
     const sortedAgents = [...activeAgents].sort((a, b) => b.answered - a.answered);
+    currentSortedAgents = sortedAgents;
     const topAgent = sortedAgents.length > 0 ? sortedAgents[0] : null;
     const avgPerAgent = activeAgents.length > 0 ? Math.round(metrics.answered / activeAgents.length) : 0;
     const answerRateClass = metrics.answerRate >= 98 ? 'highlight' : (metrics.answerRate < 90 ? 'danger' : '');
@@ -738,7 +913,7 @@ function renderData() {
                 return `<tr class="${rowClass}">
                     <td><span class="rank-badge ${i < 3 ? 'rank-' + (i+1) : 'rank-default'}">${i + 1}</span></td>
                     <td><strong>${agent.name}</strong>${agent.metricUserName ? `<div style="font-size: 0.75rem; color: var(--text-secondary);">${agent.metricUserName}</div>` : ''}</td>
-                    <td>${agent.tasksCompleted || 0}</td>
+                    <td><a href="#" onclick="showTasksModal(${i}); return false;" class="task-detail-link">${agent.tasksTotal || 0}</a></td>
                     <td>${agent.answered}</td>
                     <td class="progress-cell"><div class="progress-container"><div class="progress-bar-wrapper"><div class="progress-bar ${callsProgressClass}" style="width: ${callsProgress}%"></div></div><span class="progress-text ${callsTextClass}">${agent.answered}</span></div></td>
                     <td class="progress-cell"><div class="progress-container"><div class="progress-bar-wrapper"><div class="progress-bar ${durationProgressClass}" style="width: ${durationProgress}%"></div></div><span class="progress-text ${durationTextClass}">${agent.avgDuration}</span></div></td>

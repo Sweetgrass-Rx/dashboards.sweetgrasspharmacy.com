@@ -19,11 +19,9 @@
         border: 1px solid var(--border-color);
         background: var(--bg-secondary);
         border-radius: 6px;
-        cursor: default;
         font-weight: 500;
-        color: var(--text-muted);
+        color: var(--text-secondary);
         text-decoration: none;
-        opacity: 0.5;
     }
 
     .week-title {
@@ -446,14 +444,8 @@ function renderWeekNav() {
 
     const label = w.weekLabel || 'Current Week';
 
-    // Static version: navigation buttons are shown but disabled
     container.innerHTML = `
-        <button class="week-nav-btn" disabled title="Navigation not available in static view">&larr; Previous Week</button>
         <span class="week-title">${label}</span>
-        <div class="view-toggle">
-            <button class="view-toggle-btn active">Week</button>
-            <button class="view-toggle-btn" style="opacity: 0.5; cursor: default;">Month</button>
-        </div>
     `;
 }
 

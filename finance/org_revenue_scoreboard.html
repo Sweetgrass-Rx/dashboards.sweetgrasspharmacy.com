@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Org Revenue Scoreboard</title>
+    <link rel="stylesheet" href="../base_styles.css">
+    <style>
+    .summary-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .stat-card {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        box-shadow: var(--shadow);
+    }
+
+    .stat-value {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1.2;
+    }
+
+    .stat-value.green { color: #2d6a4f; }
+
+    .stat-label {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        margin-top: 5px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .stat-sub {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        margin-top: 3px;
+    }
+
+    .filter-bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 15px;
+    }
+
+    .search-input {
+        padding: 8px 14px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        font-size: 0.85rem;
+        width: 280px;
+    }
+
+    .search-input::placeholder {
+        color: var(--text-muted);
+    }
+
+    .search-wrap {
+        position: relative;
+        display: inline-block;
+    }
+
+    .search-wrap .search-input {
+        padding-right: 28px;
+    }
+
+    .search-clear {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--text-muted);
+        font-size: 1.1rem;
+        padding: 2px 4px;
+        line-height: 1;
+        border-radius: 50%;
+    }
+
+    .search-clear:hover {
+        color: var(--text-primary);
+        background: var(--bg-primary);
+    }
+
+    .result-count {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+    }
+
+    .table-container {
+        overflow-x: auto;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+    }
+
+    .scoreboard-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.8rem;
+    }
+
+    .scoreboard-table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: var(--bg-tertiary);
+        color: var(--text-secondary);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 0.65rem;
+        padding: 8px 10px;
+        text-align: left;
+        border-bottom: 2px solid var(--border-color);
+        white-space: nowrap;
+    }
+
+    .scoreboard-table thead th.number { text-align: right; }
+
+    .scoreboard-table thead th.month-group {
+        text-align: center;
+        border-left: 2px solid var(--border-color);
+    }
+
+    .scoreboard-table thead th.month-sub {
+        font-size: 0.6rem;
+        font-weight: 500;
+        color: var(--text-muted);
+        text-transform: none;
+        letter-spacing: 0;
+    }
+
+    .scoreboard-table tbody td {
+        padding: 6px 10px;
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-primary);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .scoreboard-table tbody td.number { text-align: right; }
+
+    .scoreboard-table tbody td.month-start {
+        border-left: 2px solid var(--border-color);
+    }
+
+    .scoreboard-table tbody td.avg-cell {
+        color: var(--text-secondary);
+        font-size: 0.75rem;
+    }
+
+    .scoreboard-table tbody tr:hover {
+        background: var(--bg-tertiary);
+    }
+
+    .org-name {
+        max-width: 220px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-weight: 500;
+    }
+
+    .rank-num {
+        color: var(--text-muted);
+        font-size: 0.7rem;
+        width: 30px;
+        text-align: center;
+    }
+
+    .trend-badge {
+        display: inline-block;
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 10px;
+        white-space: nowrap;
+    }
+
+    .trend-badge.silent { background: var(--bg-tertiary); color: var(--text-muted); }
+    .trend-badge.growing { background: rgba(45, 106, 79, 0.12); color: #2d6a4f; }
+    .trend-badge.declining { background: rgba(220, 53, 69, 0.12); color: var(--accent-red); }
+    .trend-badge.softening { background: rgba(255, 165, 0, 0.12); color: #b8860b; }
+    .trend-badge.stable { background: rgba(100, 149, 237, 0.12); color: #4169e1; }
+
+    .projected-value {
+        font-weight: 600;
+        color: var(--text-secondary);
+    }
+
+    .current-highlight {
+        background: rgba(45, 106, 79, 0.04);
+    }
+
+    .scoreboard-table tbody td.rev-up-1 { background: rgba(45, 106, 79, 0.08); }
+    .scoreboard-table tbody td.rev-up-2 { background: rgba(45, 106, 79, 0.18); }
+    .scoreboard-table tbody td.rev-up-3 { background: rgba(45, 106, 79, 0.30); }
+
+    .scoreboard-table tbody td.rev-down-1 { background: rgba(200, 16, 46, 0.08); }
+    .scoreboard-table tbody td.rev-down-2 { background: rgba(200, 16, 46, 0.18); }
+    .scoreboard-table tbody td.rev-down-3 { background: rgba(200, 16, 46, 0.30); }
+
+    .loading-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--text-muted);
+    }
+
+    @media (max-width: 900px) {
+        .summary-stats {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        .search-input {
+            width: 100%;
+        }
+    }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <a href="https://sweetgrasspharmacy.com" class="logo"><img src="https://sweetgrasspharmacy.com/wp-content/uploads/2023/09/Sweetgrass-Pharmacy-and-Compounding-logo.svg" alt="Sweetgrass Pharmacy"></a>
+            <nav>
+                <a href="../operations/call_center.html">Call Center</a>
+                <a href="../operations/prescription_entry.html">Rx Entry</a>
+                <a href="gross_profits.html">Gross Profits</a>
+                <a href="org_revenue_scoreboard.html" class="active">Org Scoreboard</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+<div class="page-header">
+    <h1>Org Revenue Scoreboard</h1>
+    <p>Monthly revenue by organization with projections</p>
+</div>
+
+<div class="summary-stats" id="summaryStats">
+    <div class="stat-card">
+        <div class="stat-value green" id="totalCurrent">--</div>
+        <div class="stat-label">Current Month Revenue</div>
+        <div class="stat-sub" id="currentMonthLabel">--</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="totalProjected">--</div>
+        <div class="stat-label">Projected Month-End</div>
+        <div class="stat-sub" id="projectionBasis">--</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="orgCount">--</div>
+        <div class="stat-label">Organizations</div>
+        <div class="stat-sub">Total tracked</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="avgPerOrg">--</div>
+        <div class="stat-label">Avg Revenue / Org</div>
+        <div class="stat-sub">Current month</div>
+    </div>
+</div>
+
+<div class="filter-bar">
+    <div class="search-wrap">
+        <input type="text" class="search-input" id="searchInput" placeholder="Search organizations..." oninput="filterTable()">
+        <button class="search-clear" id="searchClearBtn" onclick="clearSearch()" style="display:none">&times;</button>
+    </div>
+    <span class="result-count" id="resultCount"></span>
+</div>
+
+<div class="table-container">
+    <div id="tableContent">
+        <div class="loading-state">Loading data...</div>
+    </div>
+</div>
+
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="refresh-indicator">
+                <span class="refresh-dot"></span>
+                <span>Static snapshot</span>
+            </div>
+        </div>
+    </footer>
+
+<script>
+let allData = null;
+
+const DATA_BASE = '../data/';
+
+function formatCurrency(value) {
+    if (value >= 1000000) return '$' + (value / 1000000).toFixed(2) + 'M';
+    if (value >= 1000) return '$' + (value / 1000).toFixed(1) + 'K';
+    return '$' + Math.round(value).toLocaleString();
+}
+
+function formatCurrencyFull(value) {
+    return '$' + Math.round(value).toLocaleString();
+}
+
+async function fetchData() {
+    try {
+        const response = await fetch(DATA_BASE + 'org_revenue_scoreboard.json');
+        allData = await response.json();
+        renderSummary();
+        renderTable(allData.rows);
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        document.getElementById('tableContent').innerHTML =
+            '<div class="loading-state">Error loading data.</div>';
+    }
+}
+
+function renderSummary() {
+    const s = allData.summary;
+    const months = allData.months;
+    const currentLabel = months[months.length - 1].label;
+
+    document.getElementById('totalCurrent').textContent = formatCurrency(s.totalCurrent);
+    document.getElementById('currentMonthLabel').textContent = currentLabel;
+    document.getElementById('totalProjected').textContent = formatCurrency(s.totalProjected);
+    document.getElementById('projectionBasis').textContent =
+        s.bizDaysElapsed + ' of ' + s.bizDaysFull + ' business days elapsed';
+    document.getElementById('orgCount').textContent = s.orgCount.toLocaleString();
+    document.getElementById('avgPerOrg').textContent = formatCurrency(s.avgPerOrg);
+}
+
+function heatClass(rev, prevRev) {
+    if (prevRev > 0) {
+        const pctChange = ((rev - prevRev) / prevRev) * 100;
+        if (pctChange > 0) {
+            if (pctChange >= 50) return ' rev-up-3';
+            if (pctChange >= 20) return ' rev-up-2';
+            return ' rev-up-1';
+        } else if (pctChange < 0) {
+            const absPct = Math.abs(pctChange);
+            if (absPct >= 50) return ' rev-down-3';
+            if (absPct >= 20) return ' rev-down-2';
+            return ' rev-down-1';
+        }
+    } else if (prevRev === 0 && rev > 0) {
+        return ' rev-up-2';
+    }
+    return '';
+}
+
+function renderTable(rows) {
+    const months = allData.months;
+
+    let html = '<table class="scoreboard-table">';
+    html += '<thead>';
+    // Header row 1: month group labels
+    html += '<tr>';
+    html += '<th rowspan="2">#</th>';
+    html += '<th rowspan="2">Organization</th>';
+    for (let i = 0; i < 4; i++) {
+        const cls = i === 3 ? 'month-group current-highlight' : 'month-group';
+        html += `<th colspan="2" class="${cls}">${months[i].label}</th>`;
+    }
+    const currentMonthShort = months[months.length - 1].short;
+    html += `<th rowspan="2" class="number month-group current-highlight">${currentMonthShort} Projection</th>`;
+    html += '<th rowspan="2" class="number month-group">Trend</th>';
+    html += '</tr>';
+    // Header row 2: sub-columns
+    html += '<tr>';
+    for (let i = 0; i < 4; i++) {
+        const cls = i === 3 ? 'month-sub number month-start current-highlight' : 'month-sub number month-start';
+        const clsAvg = i === 3 ? 'month-sub number current-highlight' : 'month-sub number';
+        html += `<th class="${cls}">Revenue</th>`;
+        html += `<th class="${clsAvg}">Avg/Day</th>`;
+    }
+    html += '</tr>';
+    html += '</thead><tbody>';
+
+    if (rows.length === 0) {
+        html += '<tr><td colspan="12" class="loading-state">No organizations found.</td></tr>';
+    } else {
+        rows.forEach((row, idx) => {
+            html += '<tr>';
+            html += `<td class="rank-num">${idx + 1}</td>`;
+            html += `<td class="org-name" title="${row.name}">${row.name}</td>`;
+
+            for (let i = 0; i < 4; i++) {
+                const rev = row['rev' + i];
+                const avg = row['avg' + i];
+                const prevRev = i > 0 ? row['rev' + (i - 1)] : row.revBaseline;
+                const trendCls = heatClass(rev, prevRev);
+
+                const startCls = (i === 3 ? 'number month-start current-highlight' : 'number month-start') + trendCls;
+                const avgCls = (i === 3 ? 'number avg-cell current-highlight' : 'number avg-cell') + trendCls;
+                html += `<td class="${startCls}">${rev > 0 ? formatCurrencyFull(rev) : '-'}</td>`;
+                html += `<td class="${avgCls}">${avg > 0 ? formatCurrency(avg) : '-'}</td>`;
+            }
+
+            // Projected
+            const projCls = heatClass(row.projected, row.rev2);
+            html += `<td class="number month-start current-highlight projected-value${projCls}">${row.projected > 0 ? formatCurrencyFull(row.projected) : '-'}</td>`;
+
+            // Trend label
+            const label = row.trendLabel || 'Stable';
+            const labelCls = label.toLowerCase();
+            html += `<td class="number month-start"><span class="trend-badge ${labelCls}">${label}</span></td>`;
+
+            html += '</tr>';
+        });
+    }
+
+    html += '</tbody></table>';
+    document.getElementById('tableContent').innerHTML = html;
+    document.getElementById('resultCount').textContent = rows.length + ' organizations';
+}
+
+function filterTable() {
+    if (!allData) return;
+    const query = document.getElementById('searchInput').value.toLowerCase().trim();
+    const clearBtn = document.getElementById('searchClearBtn');
+    if (clearBtn) clearBtn.style.display = query ? '' : 'none';
+    if (!query) {
+        renderTable(allData.rows);
+        return;
+    }
+    const filtered = allData.rows.filter(r => r.name.toLowerCase().includes(query));
+    renderTable(filtered);
+}
+
+function clearSearch() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('searchClearBtn').style.display = 'none';
+    if (allData) renderTable(allData.rows);
+}
+
+fetchData();
+</script>
+</body>
+</html>

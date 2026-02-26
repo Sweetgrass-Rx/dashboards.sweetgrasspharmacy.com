@@ -265,6 +265,68 @@
     .tv-dot:hover { background: var(--accent-blue); opacity: 0.7; }
     .tv-dot.active { background: var(--accent-blue); transform: scale(1.2); }
     /* === END TV MODE === */
+
+    /* Tasks Breakdown Modal */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-content {
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        max-width: 500px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .modal-header h3 { margin: 0; font-size: 1.1rem; color: var(--text-primary); }
+    .modal-close {
+        background: none; border: none; font-size: 1.5rem;
+        color: var(--text-secondary); cursor: pointer; padding: 0; line-height: 1;
+    }
+    .modal-close:hover { color: var(--text-primary); }
+    .modal-body { padding: 20px; }
+
+    .task-detail-link {
+        color: var(--accent-blue);
+        text-decoration: none;
+        font-weight: 600;
+    }
+    .task-detail-link:hover {
+        text-decoration: underline;
+    }
+
+    .task-breakdown-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .task-breakdown-table th {
+        text-align: left; padding: 8px 12px; font-size: 0.7rem;
+        text-transform: uppercase; letter-spacing: 0.5px;
+        color: var(--text-secondary); border-bottom: 2px solid var(--border-color);
+    }
+    .task-breakdown-table th.number { text-align: right; }
+    .task-breakdown-table td { padding: 8px 12px; border-bottom: 1px solid var(--border-color); }
+    .task-breakdown-table td.number {
+        text-align: right; font-variant-numeric: tabular-nums; font-weight: 600;
+    }
+    .task-breakdown-total {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 12px 0; margin-top: 8px; border-top: 2px solid var(--border-color);
+        font-weight: 700; font-size: 0.95rem;
+    }
     </style>
 </head>
 <body>
@@ -387,6 +449,17 @@
     <span class="tv-dot" data-panel="1"></span>
 </div>
 
+<!-- Tasks Breakdown Modal -->
+<div class="modal-overlay" id="tasksModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="tasksModalTitle">Task Breakdown</h3>
+            <button class="modal-close" onclick="closeTasksModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="tasksModalBody"></div>
+    </div>
+</div>
+
     </main>
 
     <footer>
@@ -401,6 +474,65 @@
 <script>
 let allData = { data: {}, dates: [], queue: null };
 let currentDate = null;
+let currentSortedEmployees = [];
+
+// Task type display labels for modal
+const TASK_TYPE_LABELS = {
+    smsReceived: 'SMS Received',
+    smsSent: 'SMS Sent',
+    patientRefillRequest: 'Patient Refill Request',
+    prescriptionsReworked: 'Prescriptions Reworked',
+    prescriptionClarification: 'Prescription Clarification',
+    callPatientEntered: 'Call Patient Entered',
+    callPatientCompleted: 'Call Patient Completed',
+    patientPortalPaymentUpdate: 'Patient Portal Payment Update',
+    processingOrder: 'Processing Order',
+};
+
+function showTasksModal(index) {
+    const emp = currentSortedEmployees[index];
+    if (!emp) return;
+
+    const breakdown = emp.taskBreakdown || {};
+    const total = emp.tasks || 0;
+
+    document.getElementById('tasksModalTitle').textContent = `Task Breakdown \u2014 ${emp.name}`;
+
+    let rows = '';
+    for (const [key, label] of Object.entries(TASK_TYPE_LABELS)) {
+        const count = breakdown[key] || 0;
+        if (count > 0) {
+            rows += `<tr><td>${label}</td><td class="number">${count}</td></tr>`;
+        }
+    }
+
+    if (!rows) {
+        rows = '<tr><td colspan="2" style="text-align: center; color: var(--text-muted); padding: 20px;">No tasks recorded</td></tr>';
+    }
+
+    document.getElementById('tasksModalBody').innerHTML = `
+        <table class="task-breakdown-table">
+            <thead><tr><th>Task Type</th><th class="number">Count</th></tr></thead>
+            <tbody>${rows}</tbody>
+        </table>
+        <div class="task-breakdown-total">
+            <span>Total</span>
+            <span>${total}</span>
+        </div>
+    `;
+    document.getElementById('tasksModal').classList.add('active');
+}
+
+function closeTasksModal() {
+    document.getElementById('tasksModal').classList.remove('active');
+}
+
+document.getElementById('tasksModal').addEventListener('click', function(e) {
+    if (e.target === this) closeTasksModal();
+});
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeTasksModal();
+});
 
 // Data file paths (static JSON)
 const DATA_BASE = '../data/';
@@ -568,6 +700,7 @@ function renderData() {
     }
 
     const employees = dayData.employees || [];
+    currentSortedEmployees = employees;
     const totalRx = dayData.totalPrescriptions;
     const topPerformer = employees.length > 0 ? employees[0] : null;
     const prEmployees = employees.filter(e => e.isPersonalRecord);
@@ -677,6 +810,7 @@ function renderData() {
                     <tr>
                         <th>Rank</th>
                         <th>Employee</th>
+                        <th>Tasks</th>
                         <th>Answered</th>
                         <th>Prescriptions</th>
                         <th>Progress to Goal (${DAILY_GOAL})</th>
@@ -693,6 +827,7 @@ function renderData() {
                         <tr class="${rowClass}">
                             <td><span class="rank-badge ${i < 3 ? 'rank-' + (i+1) : 'rank-default'}">${i + 1}</span></td>
                             <td><strong>${emp.name}</strong></td>
+                            <td><a href="#" onclick="showTasksModal(${i}); return false;" class="task-detail-link">${(emp.tasks || 0).toLocaleString()}</a></td>
                             <td>${emp.answered != null ? emp.answered : '-'}</td>
                             <td>${emp.prescriptions.toLocaleString()}</td>
                             <td class="progress-cell">
